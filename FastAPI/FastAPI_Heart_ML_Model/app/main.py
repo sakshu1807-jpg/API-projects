@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from schema import Heart_Details, HeartPredictionResponse
+from schema import Heart_Details
 from model_utils import preprocess_new_data, convert_dict_to_df, final_prediction
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title= "Heart Disease Prediction API Model", version= "1.0")
 
@@ -21,4 +22,10 @@ def heart_prediction(detail: Heart_Details):
         "message": message 
     }
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["*"],
+    allow_credentials = ["*"],
+    allow_methods = ["*"],
+    allow_headers = ["*"]
+)
