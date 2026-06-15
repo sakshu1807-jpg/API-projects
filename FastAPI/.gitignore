@@ -1,0 +1,13 @@
+# Ignore python virtual environments at any level
+**/.colab_env/
+**/.venv/
+.venv/
+.colab_env/
+
+# Ignore Python runtime cache files
+**/__pycache__/
+**/*.pyc
+
+# Ignore system configuration files
+.DS_Store
+Thumbs.db
