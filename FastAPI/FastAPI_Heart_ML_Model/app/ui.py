@@ -88,7 +88,7 @@ if st.button("Generate Diagnostic Evaluation", type="primary", use_container_wid
     }
     
     # Define your live local FastAPI endpoint URL
-    FASTAPI_URL = "http://127.0.0.1:8000"
+    FASTAPI_URL = "https://heart-health-backend-vklk.onrender.com"
     
     try:
         # Send the payload via a POST request straight to your running FastAPI server
