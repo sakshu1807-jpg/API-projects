@@ -3,6 +3,7 @@
 **/.venv/
 .venv/
 .colab_env/
+.venv_3.12
 
 # Ignore Python runtime cache files
 **/__pycache__/
