@@ -13,7 +13,7 @@ st.set_page_config(
 BACKEND_URL = st.sidebar.text_input("Backend API URL", value="https://customer-management-system-nm-enterprises.onrender.com")
 
 st.title("🛒 NM ENTERPRISES")
-st.subtitle("Minimalist Customer Management System")
+st.markdown("##### Minimalist Customer Management System")
 st.markdown("---")
 
 # Fetch all data for quick overview
