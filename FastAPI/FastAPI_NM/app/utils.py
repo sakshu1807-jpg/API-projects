@@ -1,29 +1,30 @@
-import json
-from pathlib import Path
+import os
 from typing import List, Dict
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
+from pymongo import MongoClient
 
-data_file = Path('../data/customer.json')
+# 1. Connect to MongoDB using an Environment Variable
+# When testing locally, you can paste your string here as a default fallback:
+MONGO_URI = os.getenv("MONGO_URI", "PASTE_YOUR_MONGODB_CONNECTION_STRING_HERE")
+
+client = MongoClient(MONGO_URI)
+db = client["nm_enterprises_db"]      # Database name
+collection = db["customers"]          # Collection (Table) name
 
 def load_all() -> List[Dict]:
-    if not data_file.exists():
-        return []
-    
-    with open(data_file, 'r') as f:
-        return json.load(f)
-    
-customers = load_all()
+    """Fetches all customers directly from the cloud database."""
+    customers = list(collection.find({}, {"_id": 0})) # Drops internal mongo IDs for clean JSON
+    return customers
 
 def add_customer(customer_data: Dict, products: str):
-
     customer_data['Name'] = customer_data['Name'].strip().lower()
 
-    if any(customer_data['Name'] == customer['Name'] for customer in customers):
+    # Check if customer already exists in cloud
+    if collection.find_one({"Name": customer_data['Name']}):
         raise ValueError(f"Customer with name {customer_data['Name']} is already present")
     
     raw_time_str = customer_data.get("Purchased_At")
-    
     if raw_time_str:
         clean_iso = raw_time_str.replace("Z", "+00:00")
         dt = datetime.fromisoformat(clean_iso)
@@ -32,58 +33,49 @@ def add_customer(customer_data: Dict, products: str):
     
     products_list = [p.strip() for p in products.split(',')]
     customer_data['Products_Purchased'] = [products_list]
-    customers.append(customer_data)
-    with open(data_file, 'w') as f:
-        return json.dump(customers, f, ensure_ascii= True, indent= 2)
     
+    # Save directly to Cloud
+    collection.insert_one(customer_data)
+
 def modify_customer_record(name: str, current_balance: int, products: str):
     products_list = [p.strip() for p in products.split(',')]
     ist_dt = datetime.now(ZoneInfo("Asia/Kolkata"))
-    time = ist_dt.strftime("%d %B %Y, %I:%M %p")
-    is_present = False
-    for customer in customers:
-        if customer['Name'] == name.strip().lower():
-            customer['Total_Balance'] = customer['Total_Balance'] + current_balance
-            customer['Products_Purchased'].append(products_list)
-            customer['Purchased_At'].append(time)
-            is_present = True
-            break
-
-    if is_present:
-        with open(data_file, 'w') as f:
-            return json.dump(customers, f, ensure_ascii= True, indent= 2)
-    else:
-        raise ValueError("Customer Not Found")
+    time_str = ist_dt.strftime("%d %B %Y, %I:%M %p")
     
+    clean_name = name.strip().lower()
+    
+    # Update array elements and increment balance directly in Atlas
+    result = collection.update_one(
+        {"Name": clean_name},
+        {
+            "$inc": {"Total_Balance": current_balance},
+            "$push": {
+                "Products_Purchased": products_list,
+                "Purchased_At": time_str
+            }
+        }
+    )
+    if result.matched_count == 0:
+        raise ValueError("Customer Not Found")
+
 def modify_customer_balance(name: str, balance: int):
-    is_present = False
-    for customer in customers:
-        if customer['Name'].strip().lower() == name.strip().lower():
-            customer['Total_Balance'] = customer['Total_Balance'] - balance
-            is_present = True
-            break
-        
-    if is_present:
-        with open(data_file, 'w')as f:
-            return json.dump(customers, f, ensure_ascii= True, indent= 2)
-    else:
+    clean_name = name.strip().lower()
+    
+    # Decrement balance ($inc with a negative value subtracts)
+    result = collection.update_one(
+        {"Name": clean_name},
+        {"$inc": {"Total_Balance": -balance}}
+    )
+    if result.matched_count == 0:
         raise ValueError("Customer Not Found")
         
 def delete_customer(name: str):
-    is_present = False
-    index = None
-    for customer in customers:
-        if customer.get('Name').strip().lower() == name.strip().lower():
-            index = customers.index(customer)
-            is_present = True
-            break
-    if isinstance(index, int) and is_present:
-        removed_customer = customers.pop(index)
-        with open(data_file, 'w') as f:
-            json.dump(customers, f, ensure_ascii= True, indent= 2)
-        return removed_customer
-    else:
+    clean_name = name.strip().lower()
+    
+    # Find and delete
+    customer = collection.find_one({"Name": clean_name}, {"_id": 0})
+    if not customer:
         raise ValueError("Customer Not Found")
-
-
-
+        
+    collection.delete_one({"Name": clean_name})
+    return customer

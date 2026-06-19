@@ -1,14 +1,10 @@
 from fastapi import FastAPI, Depends, Query, HTTPException
 from schema import Customer
+import utils
 from utils import load_all, add_customer, modify_customer_record, modify_customer_balance, delete_customer
 from typing import List, Dict
 
 app = FastAPI(title="NM ENTERPRISES")
-
-def load_all_customer() -> List[Dict]:
-    return load_all()
-
-customers = load_all_customer()
 
 @app.post('/create_customer')
 def create_customer(new_customer: Customer, 
@@ -25,7 +21,7 @@ def create_customer(new_customer: Customer,
         }
     
     except ValueError as error:
-        return HTTPException(status_code= 404, detail= str(error))
+        raise HTTPException(status_code= 404, detail= str(error))
 
 @app.post('/update_customer_record')
 def update_customer_record(customer_name: str = Query(...,
@@ -51,7 +47,7 @@ def update_customer_record(customer_name: str = Query(...,
         }
     
     except Exception as error:
-        return HTTPException(status_code=404,detail= str(error))
+        raise HTTPException(status_code=404,detail= str(error))
 
 @app.post('/update_record_balance')   
 def update_customer_balance(customer_name: str = Query(...,
@@ -72,14 +68,12 @@ def update_customer_balance(customer_name: str = Query(...,
         }
     
     except Exception as error:
-        return {
-            HTTPException(status_code=404, detail= str(error))
-        }
+        raise HTTPException(status_code=404, detail= str(error))
 
 @app.get('/get_all')
 def get_all_customers():
     return {
-        "All Customer Data": customers
+        "All Customer Data": utils.load_all()
     }
 
 @app.get('/customer_total_balance')
@@ -90,7 +84,7 @@ def get_customer_total_balance(customer_name: str = Query(...,
     )
 ):
     try:
-        for customer in customers:
+        for customer in utils.load_all():
             if customer.get('Name') == customer_name.strip().lower():
                 if customer['Total_Balance'] < 0:
                     return {
@@ -104,9 +98,7 @@ def get_customer_total_balance(customer_name: str = Query(...,
                             "Balance Details":f"This customer has a total balance of {customer['Total_Balance']}"
                     }
     except:
-        return {
-            HTTPException(status_code= 404, detail= "Name not found")
-        }
+        raise HTTPException(status_code= 404, detail= "Name not found")
 
 @app.get('/customer_history')
 def get_customer_history(customer_name: str = Query(...,
@@ -116,7 +108,7 @@ def get_customer_history(customer_name: str = Query(...,
     )
 ):
     try:
-        for customer in customers:
+        for customer in utils.load_all():
             if customer['Name'].lower() == customer_name.lower():
                 history  = customer['Products_Purchased']
                 time = customer['Purchased_At']
@@ -126,11 +118,9 @@ def get_customer_history(customer_name: str = Query(...,
                     'Customer Buying Time': time,
                     'Customer Total Balance': customer['Total_Balance']
                 }
-        return {
-            HTTPException(status_code=404, detail="Name Not Found")
-        }
+        raise HTTPException(status_code= 404, detail= "Name not found")
     except Exception as error:
-        return HTTPException(status_code=404, detail= str(error))
+        raise HTTPException(status_code=404, detail= str(error))
             
 @app.delete("/customer")
 def remove_customer(customer_name: str= Query(...,
@@ -144,6 +134,6 @@ def remove_customer(customer_name: str= Query(...,
         return f"Customer record deleted with details : {customer_detail}"
     
     except ValueError as error:
-        return HTTPException(status_code=404, detail= str(error))
+        raise HTTPException(status_code=404, detail= str(error))
     
     
