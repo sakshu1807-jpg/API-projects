@@ -1,0 +1,35 @@
+[
+  {
+    "Name": "sahil",
+    "Purchased_At": [
+      "19 June 2026, 03:03 PM",
+      "19 June 2026, 03:13 PM"
+    ],
+    "Total_Balance": 30,
+    "Products_Purchased": [
+      [
+        "5 kg atta",
+        "chips",
+        "chini"
+      ],
+      [
+        "1 soda",
+        "2 biscuit",
+        "1 diet mixture"
+      ]
+    ]
+  },
+  {
+    "Name": "96 2nd floor",
+    "Purchased_At": [
+      "19 June 2026, 03:27 PM"
+    ],
+    "Total_Balance": 110,
+    "Products_Purchased": [
+      [
+        "10 arora lemon",
+        "1 silk chocolate"
+      ]
+    ]
+  }
+]

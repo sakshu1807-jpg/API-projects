@@ -6,10 +6,17 @@ from typing import List, Dict
 app = FastAPI(title="NM ENTERPRISES")
 
 def load_all_customer() -> List[Dict]:
-    return load_all
+    return load_all()
 
-@app.post('/customers', response_model= Dict)
-def create_customer(new_customer: Customer, products: str):
+customers = load_all_customer()
+
+@app.post('/create_customer')
+def create_customer(new_customer: Customer, 
+        products: str = Query(...,
+        title= "Products Purchased",
+        description= "Enter the prodcuts ',' seperated"
+        )
+):
     customer_dict = new_customer.model_dump(mode='json')
     try:
         add_customer(customer_dict, products)
@@ -17,12 +24,10 @@ def create_customer(new_customer: Customer, products: str):
             f"Customer Details Added"
         }
     
-    except Exception as error:
-        return {
-            f"An Error Occurred as {error}"
-        }
+    except ValueError as error:
+        return HTTPException(status_code= 404, detail= str(error))
 
-@app.post('/customers', response_model= Dict)
+@app.post('/update_customer_record')
 def update_customer_record(customer_name: str = Query(...,
     min_length=1,
     title= "Customer Name",
@@ -46,18 +51,16 @@ def update_customer_record(customer_name: str = Query(...,
         }
     
     except Exception as error:
-        return {
-            f"An Error Occurred as {error}"
-        }
+        return HTTPException(status_code=404,detail= str(error))
 
-@app.post('/customers', response_model = Dict)   
+@app.post('/update_record_balance')   
 def update_customer_balance(customer_name: str = Query(...,
     min_length=1,
     title= "Customer Name",
     description='Enter name of the customer'
     ),
     balance: int = Query(...,
-        ge= 0,
+        gt= 0,
         title= "Enter Amount Given",
         description= "Enter the amount given"
     )
@@ -65,70 +68,71 @@ def update_customer_balance(customer_name: str = Query(...,
     try:
         modify_customer_balance(customer_name, balance)
         return {
-            f"Customer Details with name {customer_name} has been updated"
+            f"Customer Balance with name {customer_name} has been updated"
         }
     
     except Exception as error:
         return {
-            HTTPException(status_code=404, detail= error)
+            HTTPException(status_code=404, detail= str(error))
         }
 
-@app.get('/customers')
-def get_all_customers(dep = Depends(load_all_customer)):
+@app.get('/get_all')
+def get_all_customers():
     return {
-        "All Customer Data": dep
+        "All Customer Data": customers
     }
 
-@app.get('/customers', response_model= Dict)
+@app.get('/customer_total_balance')
 def get_customer_total_balance(customer_name: str = Query(...,
     min_length=1,
     title= "Customer Name",
     description='Enter name of the customer'
-    ), 
-    dep = Depends(load_all_customer)
+    )
 ):
-    customers = dep
-    for customer in customers:
-        if customer['Name'].lower() == customer_name.lower():
-            if customer['Total_Balance'] < 0:
-                return {
-                        "Customer Name": customer['Name'],
-                        "Balance Details":f"This customer has a credit amount of {customer['Total_Balance']}"
+    try:
+        for customer in customers:
+            if customer.get('Name') == customer_name.strip().lower():
+                if customer['Total_Balance'] < 0:
+                    return {
+                            "Customer Name": customer_name,
+                            "Balance Details":f"This customer has a credit amount of {abs(customer['Total_Balance'])}"
+                        }
+        
+                else:
+                    return {
+                            "Customer Name": customer_name,
+                            "Balance Details":f"This customer has a total balance of {customer['Total_Balance']}"
                     }
-    
-            else:
-                return {
-                        "Customer Name": customer['Name'],
-                        "Balance Details":f"This customer has a total balance of {customer['Total Balance']}"
-                }
-    
-    return {
-        HTTPException(status_code= 404, detail="Customer Name Not Found")
-    }
+    except:
+        return {
+            HTTPException(status_code= 404, detail= "Name not found")
+        }
 
-@app.get('/customers')
+@app.get('/customer_history')
 def get_customer_history(customer_name: str = Query(...,
     min_length=1,
     title= "Customer Name",
     description='Enter name of the customer'
-    ), 
-    dep = Depends(load_all_customer)
+    )
 ):
-    customers = dep
-    for customer in customers:
-        if customer['Name'].lower() == customer_name.lower():
-            history  = customer['Products_Purchased']
-            time = customer['Purchased_At']
-            return {
-                'Customer Name': customer['Name'],
-                'Customer Buying History': history,
-                'Customer Buying Time': time,
-                'Customer Total Balance': customer['Total_Balance']
-            }
-
-    return HTTPException(status_code= 404, detail="Customer Buying History Cannot Be Found")
+    try:
+        for customer in customers:
+            if customer['Name'].lower() == customer_name.lower():
+                history  = customer['Products_Purchased']
+                time = customer['Purchased_At']
+                return {
+                    'Customer Name': customer['Name'],
+                    'Customer Buying History': history,
+                    'Customer Buying Time': time,
+                    'Customer Total Balance': customer['Total_Balance']
+                }
+        return {
+            HTTPException(status_code=404, detail="Name Not Found")
+        }
+    except Exception as error:
+        return HTTPException(status_code=404, detail= str(error))
             
-@app.delete("/customers")
+@app.delete("/customer")
 def remove_customer(customer_name: str= Query(...,
     min_length=1,
     title= "Customer Name",
@@ -139,7 +143,7 @@ def remove_customer(customer_name: str= Query(...,
         customer_detail = delete_customer(customer_name)
         return f"Customer record deleted with details : {customer_detail}"
     
-    except Exception as error:
-        return HTTPException(status_code=404, detail= error)
+    except ValueError as error:
+        return HTTPException(status_code=404, detail= str(error))
     
     
