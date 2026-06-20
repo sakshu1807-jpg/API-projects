@@ -16,7 +16,7 @@ BACKEND_URL = st.sidebar.text_input("Backend API URL", value="https://customer-m
 st.sidebar.title("📌 Menu")
 page = st.sidebar.radio(
     "Select an Operation:",
-    ["📊 Dashboard & Lookup", "➕ Add Customer", "📝 Update Record", "❌ Remove Customer"]
+    ["🛒 Dashboard & Lookup", "➕ Add Customer", "📝 Update Record", "🗑️ Remove Customer"]
 )
 
 st.sidebar.markdown("---")
@@ -33,8 +33,8 @@ except Exception:
     all_customers = []
 
 # --- PAGE 1: DASHBOARD & LOOKUP ---
-if page == "📊 Dashboard & Lookup":
-    st.title("📊 NM ENTERPRISES — Dashboard")
+if page == "🛒 Dashboard & Lookup":
+    st.title("🛒 NM ENTERPRISES — Dashboard")
     st.markdown("##### View master directory and detailed customer history")
     st.markdown("---")
     
@@ -140,8 +140,8 @@ elif page == "📝 Update Record":
                     st.error("Failed to record payment.")
 
 # --- PAGE 4: REMOVE CUSTOMER ---
-elif page == "❌ Remove Customer":
-    st.title("❌ Danger Zone")
+elif page == "🗑️ Remove Customer":
+    st.title("🗑️ Danger Zone")
     st.markdown("##### Completely purge a customer profile from the cloud files")
     st.markdown("---")
     
