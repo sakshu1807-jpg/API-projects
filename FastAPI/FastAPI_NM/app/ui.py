@@ -12,11 +12,17 @@ st.set_page_config(
 # Backend URL (Update this with your Render backend URL)
 BACKEND_URL = st.sidebar.text_input("Backend API URL", value="https://customer-management-system-nm-enterprises.onrender.com")
 
-st.title("🛒 NM ENTERPRISES")
-st.markdown("##### Customer Management System")
-st.markdown("---")
+# --- SIDEBAR NAVIGATION ---
+st.sidebar.title("📌 Menu")
+page = st.sidebar.radio(
+    "Select an Operation:",
+    ["📊 Dashboard & Lookup", "➕ Add Customer", "📝 Update Record", "❌ Remove Customer"]
+)
 
-# Fetch all data for quick overview
+st.sidebar.markdown("---")
+st.sidebar.info("💡 Tip: If the app feels slow on the first click, the backend is just waking up!")
+
+# Fetch all data for the overview
 try:
     response = requests.get(f"{BACKEND_URL}/get_all")
     if response.status_code == 200:
@@ -25,16 +31,15 @@ try:
         all_customers = []
 except Exception:
     all_customers = []
-    st.error("Could not connect to the Backend API. Please check if the server is awake.")
 
-# Tab Selection for Minimalist layout
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard & Lookup", "➕ Add Customer", "📝 Update Record", "❌ Remove"])
-
-# --- TAB 1: DASHBOARD & LOOKUP ---
-with tab1:
+# --- PAGE 1: DASHBOARD & LOOKUP ---
+if page == "📊 Dashboard & Lookup":
+    st.title("📊 NM ENTERPRISES — Dashboard")
+    st.markdown("##### View master directory and detailed customer history")
+    st.markdown("---")
+    
     st.subheader("Customer Directory")
     if all_customers:
-        # Format data for a clean table view
         formatted_data = []
         for c in all_customers:
             formatted_data.append({
@@ -61,7 +66,6 @@ with tab1:
                 with col2:
                     st.write(f"**Name:** {data['Customer Name'].title()}")
                 
-                # History breakdown
                 st.write("### Purchase History")
                 history_df = pd.DataFrame({
                     "Date & Time": data["Customer Buying Time"],
@@ -71,9 +75,12 @@ with tab1:
             else:
                 st.error("Customer not found.")
 
-# --- TAB 2: ADD CUSTOMER ---
-with tab2:
-    st.subheader("Register New Customer")
+# --- PAGE 2: ADD CUSTOMER ---
+elif page == "➕ Add Customer":
+    st.title("➕ Register New Customer")
+    st.markdown("##### Onboard a new customer profile into the system")
+    st.markdown("---")
+    
     with st.form("add_customer_form", clear_on_submit=True):
         new_name = st.text_input("Customer Name")
         initial_balance = st.number_input("Initial Balance / Due Amount", min_value=0, step=1)
@@ -89,15 +96,16 @@ with tab2:
                 res = requests.post(f"{BACKEND_URL}/create_customer", json=payload, params={"products": products})
                 if res.status_code == 200:
                     st.success(f"Successfully added {new_name}!")
-                    st.rerun()
                 else:
                     st.error(f"Error: {res.text}")
             else:
                 st.warning("Please fill out all fields.")
 
-# --- TAB 3: UPDATE RECORD (Add Purchase / Record Payment) ---
-with tab3:
-    st.subheader("Update Customer Financials")
+# --- PAGE 3: UPDATE RECORD ---
+elif page == "📝 Update Record":
+    st.title("📝 Update Customer Financials")
+    st.markdown("##### Log a new purchase order or record an incoming cash payment")
+    st.markdown("---")
     
     update_type = st.radio("Select Action", ["Record New Purchase (Increase Balance)", "Record Payment Received (Decrease Balance)"], horizontal=True)
     
@@ -115,7 +123,6 @@ with tab3:
                 })
                 if res.status_code == 200:
                     st.success("Record updated successfully!")
-                    st.rerun()
                 else:
                     st.error("Failed to update.")
         
@@ -129,13 +136,15 @@ with tab3:
                 })
                 if res.status_code == 200:
                     st.success("Payment recorded successfully!")
-                    st.rerun()
                 else:
                     st.error("Failed to record payment.")
 
-# --- TAB 4: REMOVE CUSTOMER ---
-with tab4:
-    st.subheader("Danger Zone")
+# --- PAGE 4: REMOVE CUSTOMER ---
+elif page == "❌ Remove Customer":
+    st.title("❌ Danger Zone")
+    st.markdown("##### Completely purge a customer profile from the cloud files")
+    st.markdown("---")
+    
     del_name = st.text_input("Enter exact Customer Name to completely delete:")
     confirm = st.checkbox("I understand this action is permanent and cannot be undone.")
     
@@ -144,7 +153,6 @@ with tab4:
             res = requests.delete(f"{BACKEND_URL}/customer", params={"customer_name": del_name})
             if res.status_code == 200:
                 st.success(f"Purged record for {del_name}")
-                st.rerun()
             else:
                 st.error("Customer not found.")
         else:
