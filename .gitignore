@@ -13,3 +13,6 @@
 .DS_Store
 Thumbs.db
 .vscode/settings.json
+
+#Ignore the binary files of model
+*.joblib
