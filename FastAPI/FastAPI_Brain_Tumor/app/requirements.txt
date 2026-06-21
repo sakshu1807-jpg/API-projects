@@ -1,0 +1,8 @@
+uvicorn
+huggingface_hub
+numpy
+tensorflow
+joblib
+pydicom
+fastapi
+python-multipart
