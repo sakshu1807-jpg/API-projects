@@ -15,7 +15,7 @@ st.write("Upload a regular brain MRI image (.jpg, .png) or a medical DICOM file 
 
 # 2. Define Backend Target Endpoint
 # (Ensure your FastAPI server is running on uvicorn app:main --reload)
-FASTAPI_URL = "http://127.0.0.1:8000/"
+FASTAPI_URL = "https://sakshammanchanda-brain-tumor-backend.hf.space"
 
 # 3. Handle File Uploads via UI Widget
 uploaded_file = st.file_uploader(
