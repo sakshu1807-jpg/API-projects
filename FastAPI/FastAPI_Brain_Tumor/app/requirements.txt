@@ -6,3 +6,4 @@ joblib
 pydicom
 fastapi
 python-multipart
+dill
