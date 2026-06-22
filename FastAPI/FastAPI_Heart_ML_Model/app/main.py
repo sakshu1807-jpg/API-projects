@@ -3,18 +3,18 @@ from schema import Heart_Details
 from model_utils import preprocess_new_data, convert_dict_to_df, final_prediction
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import pickle
+import joblib
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global model, scaler, oe
     try:
         model_path = 'rf_model.pkl'
-        model = pickle.load(model_path)
+        model = joblib.load(model_path)
         scaler_path = 'StandardScaler.pkl'
-        scaler = pickle.load(scaler_path)
+        scaler = joblib.load(scaler_path)
         oe_path = 'OrdinalEncoder.pkl'
-        oe = pickle.load(oe_path)
+        oe = joblib.load(oe_path)
         print("LOG: Model essentials loaded successfully.")
     except Exception as error:
         print(f"LOG: Error loading model essentials: {str(error)}.")
