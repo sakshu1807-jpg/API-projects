@@ -40,7 +40,7 @@ if uploaded_file is not None:
         # We display the educational warning right above the spinner for transparency
         st.warning(
             "⏳ **Note for Doctors/Users:** If this is the first request in a while, "
-            "our secure medical backend on Render may take up to 2-3 minutes to wake up "
+            "our secure medical backend on HuggingFace may take up to 2-3 minutes to wake up "
             "and load the 1.6 GB neural network from Hugging Face. Please do not close this tab."
         )
         
