@@ -1,57 +1,64 @@
-from fastapi import FastAPI, responses, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from schema import TumorResponse
 from model_utils import preprocess_any_image
 import numpy as np
 import joblib
-from pathlib import Path
 from huggingface_hub import hf_hub_download
-from contextlib import asynccontextmanager
-
+import os
+# Force TensorFlow to suppress all warning logs and skip GPU hardware probing
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # What happens on startup:
     global model
     repo_id = "SakshamManchanda/Brain_TumorModel"
     filename = "brain_tumor_detection_model.joblib"
-    try:
-        model_path = hf_hub_download(repo_id=repo_id, filename=filename)
-        model = joblib.load(model_path)
-        print("Model loaded successfully into FastAPI memory!")
-    except Exception as error:
-        print(f"Error loading model: {str(error)}")
     
-    yield  # API is running here
+    print("LOG: Application starting up... Attempting to connect to HF Hub.")
+    try:
+        # OPTIMIZED: Removed the parameter entirely to avoid any typo or version bugs
+        model_path = hf_hub_download(
+            repo_id=repo_id, 
+            filename=filename
+        )
+        print(f"LOG: Model downloaded to path: {model_path}. Loading with joblib...")
+        model = joblib.load(model_path)
+        print("LOG: Model loaded successfully into memory!")
+    except Exception as error:
+        print(f"LOG: Error loading model: {str(error)}")
+    yield
 
 app = FastAPI(title="BrainTumor Classification Task", lifespan=lifespan)
+
+@app.get("/")
+def read_root():
+    return {"status": "Healthy", "message": "Brain Tumor API backend is operational!"}
+
+# Essential CORS configuration for your Streamlit UI to connect safely
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 classes = ['glioma', 'meningioma', 'no_tumor', 'pituitary']
 
 @app.post('/', response_model= TumorResponse)
 async def prediction(file: UploadFile = File(...)):
     image_bytes = await file.read()
-
     filename = file.filename
     
     preprocessed_image = preprocess_any_image(image_bytes, filename)
-
-    predictions = model.predict(preprocessed_image) # returns a 2d array of probabilities of each class
-    prediction_index = np.argmax(predictions[0]) # returns index of the highest probability
-    final_prediction = classes[prediction_index] # the name of the brain tumor
+    predictions = model.predict(preprocessed_image)
+    prediction_index = np.argmax(predictions[0])
+    final_prediction = classes[prediction_index]
 
     return {
         'filename': filename,
         'prediction': final_prediction
     }
-
-from fastapi.middleware.cors import CORSMiddleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows the Streamlit cloud app to connect safely
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-
-
