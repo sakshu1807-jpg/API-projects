@@ -1,10 +1,12 @@
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OrdinalEncoder
 
 def convert_dict_to_df(details: dict) -> pd.DataFrame:
     new_df = pd.DataFrame([details])
     return new_df
 
-def preprocess_new_data(new_df: pd.DataFrame, oe, scalar) -> pd.DataFrame:
+def preprocess_new_data(new_df: pd.DataFrame, oe: OrdinalEncoder, scalar: StandardScaler) -> pd.DataFrame:
     processed_df = new_df.copy()
 
     processed_df['Sex'] = processed_df['Sex'].map({'M': 1, 'F': 0})
