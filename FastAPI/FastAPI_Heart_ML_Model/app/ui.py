@@ -71,58 +71,64 @@ st.markdown("---")
 # 3. COMMUNICATING WITH YOUR FASTAPI BACKEND
 # ==========================================
 if st.button("Generate Diagnostic Evaluation", type="primary", use_container_width=True):
+    st.warning(
+            "⏳ **Note for Users:** If this is the first request in a while, "
+            "our secure medical backend on Render may take up to 2-3 minutes to wake up "
+            "and load the machine learning model from Render. Please do not close this tab."
+        )
     
-    # Package the raw inputs to match your FastAPI Pydantic input schema fields exactly
-    payload = {
-        "Age": age,
-        "Sex": sex,
-        "ChestPain": chest_pain_type,
-        "RestingBP": resting_bp,
-        "Cholesterol": cholesterol,
-        "FastingBS": fasting_bs,
-        "RestingECG": resting_ecg,
-        "MaxHR": max_hr,  
-        "ExerciseAngina": exercise_angina,
-        "Oldpeak": oldpeak,
-        "ST_Slope": st_slope
-    }
-    
-    # Define your live local FastAPI endpoint URL
-    FASTAPI_URL = "https://heart-health-backend-vklk.onrender.com"
-    
-    try:
-        # Send the payload via a POST request straight to your running FastAPI server
-        response = requests.post(FASTAPI_URL, json=payload)
+    with st.spinner("Processing data through the ML model..."):
         
-        if response.status_code == 200:
-            # Extract the processed output, probability, and custom message from your FastAPI response
-            result = response.json()
-            raw_prediction = result["prediction"]
-            api_message = result["message"]
+        try:
+            payload = {
+            "Age": age,
+            "Sex": sex,
+            "ChestPain": chest_pain_type,
+            "RestingBP": resting_bp,
+            "Cholesterol": cholesterol,
+            "FastingBS": fasting_bs,
+            "RestingECG": resting_ecg,
+            "MaxHR": max_hr,  
+            "ExerciseAngina": exercise_angina,
+            "Oldpeak": oldpeak,
+            "ST_Slope": st_slope
+            }
+        
+            FASTAPI_URL = "https://heart-health-backend-vklk.onrender.com"
+            # Send the payload via a POST request straight to your running FastAPI server
+            response = requests.post(FASTAPI_URL, json=payload, timeout= 180)
             
-            # ==========================================
-            # 4. RENDER VIBRANT DIAGNOSTIC RESULTS
-            # ==========================================
-            st.write("### 📊 Diagnostic Summary")
-            
-            if raw_prediction == 1:
-                st.html(f"""
-                    <div class="at-risk-card">
-                        <h3>⚠️ High Risk Flagged (Status: {raw_prediction})</h3>
-                        <p>{api_message}</p>
-                    </div>
-                """)
+            if response.status_code == 200:
+                # Extract the processed output, probability, and custom message from your FastAPI response
+                result = response.json()
+                raw_prediction = result["prediction"]
+                api_message = result["message"]
+                
+                # ==========================================
+                # 4. RENDER VIBRANT DIAGNOSTIC RESULTS
+                # ==========================================
+                st.write("### 📊 Diagnostic Summary")
+                
+                if raw_prediction == 1:
+                    st.html(f"""
+                        <div class="at-risk-card">
+                            <h3>⚠️ High Risk Flagged (Status: {raw_prediction})</h3>
+                            <p>{api_message}</p>
+                        </div>
+                    """)
+                else:
+                    st.html(f"""
+                        <div class="healthy-card">
+                            <h3>✅ Low Risk Flagged (Status: {raw_prediction})</h3>
+                            <p>{api_message}</p>
+                        </div>
+                    """)
             else:
-                st.html(f"""
-                    <div class="healthy-card">
-                        <h3>✅ Low Risk Flagged (Status: {raw_prediction})</h3>
-                        <p>{api_message}</p>
-                    </div>
-                """)
-        else:
-            st.error(f"Backend API returned an error code: {response.status_code}")
-            st.info(response.text)
-            
-    except requests.exceptions.ConnectionError:
-        st.error("Could not connect to the Backend server.")
-        st.info("Make sure your FastAPI server is currently running in your second terminal tab using the `python -m uvicorn ...` command!")
+                st.error(f"Backend Server Error: {response.status_code} - {response.text}")
+
+        except requests.exceptions.Timeout:
+                st.error("❌ The request timed out. The backend server took too long to wake up and process the file. Please try clicking 'Generate Diagnostic Evaluation' again.")  
+        
+        except requests.exceptions.ConnectionError:
+                st.error("❌ Connection Failed! Please verify that your FastAPI application backend server is running and accessible.")
+
